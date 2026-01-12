@@ -400,27 +400,32 @@ async function handleAddPlanCommand(
 
     const channelId = args[0];
 
+    // Normalize quotes (Telegram often converts to curly quotes)
+    const normalizedArgs = args.map(arg =>
+        arg.replace(/[""„«»]/g, '"').replace(/[''‚‹›]/g, "'")
+    );
+
     // Parse name (handles quotes)
     let name = '';
     let priceIndex = 1;
 
-    if (args[1].startsWith('"')) {
+    if (normalizedArgs[1].startsWith('"')) {
         // Find closing quote
-        for (let i = 1; i < args.length; i++) {
-            name += (i > 1 ? ' ' : '') + args[i];
-            if (args[i].endsWith('"')) {
+        for (let i = 1; i < normalizedArgs.length; i++) {
+            name += (i > 1 ? ' ' : '') + normalizedArgs[i];
+            if (normalizedArgs[i].endsWith('"')) {
                 priceIndex = i + 1;
                 break;
             }
         }
         name = name.replace(/"/g, '');
     } else {
-        name = args[1];
+        name = normalizedArgs[1];
         priceIndex = 2;
     }
 
-    const price = parseFloat(args[priceIndex]);
-    const days = args[priceIndex + 1] ? parseInt(args[priceIndex + 1]) : null;
+    const price = parseFloat(normalizedArgs[priceIndex]);
+    const days = normalizedArgs[priceIndex + 1] ? parseInt(normalizedArgs[priceIndex + 1]) : null;
 
     if (isNaN(price) || price <= 0) {
         await sendMessage(chatId, `❌ Invalid price. Must be a positive number.`);

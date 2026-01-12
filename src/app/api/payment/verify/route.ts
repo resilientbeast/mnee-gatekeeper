@@ -63,11 +63,28 @@ export async function POST(request: NextRequest) {
         }
 
         // Verify transaction on-chain
-        const receipt = await publicClient.getTransactionReceipt({
-            hash: txHash as `0x${string}`,
-        });
+        console.log('Verifying transaction:', txHash);
+        console.log('Expected MNEE contract:', MNEE_CONTRACT_ADDRESS);
+        console.log('Expected channel wallet:', channel.wallet_address);
+        console.log('Chain ID:', CHAIN_ID);
+
+        let receipt;
+        try {
+            receipt = await publicClient.getTransactionReceipt({
+                hash: txHash as `0x${string}`,
+            });
+            console.log('Receipt status:', receipt?.status);
+            console.log('Receipt logs count:', receipt?.logs?.length);
+        } catch (receiptError) {
+            console.error('Failed to get receipt:', receiptError);
+            return NextResponse.json(
+                { error: 'Failed to fetch transaction receipt. RPC may be unavailable.' },
+                { status: 400 }
+            );
+        }
 
         if (!receipt || receipt.status !== 'success') {
+            console.log('Transaction failed or not found');
             return NextResponse.json(
                 { error: 'Transaction not found or failed' },
                 { status: 400 }
@@ -80,9 +97,11 @@ export async function POST(request: NextRequest) {
         let transferAmount = BigInt(0);
 
         for (const log of receipt.logs) {
+            console.log('Log address:', log.address);
             try {
                 // Check if this log is from the MNEE contract
                 if (log.address.toLowerCase() !== MNEE_CONTRACT_ADDRESS.toLowerCase()) {
+                    console.log('Skipping log - not from MNEE contract');
                     continue;
                 }
 
@@ -92,8 +111,13 @@ export async function POST(request: NextRequest) {
                     topics: log.topics,
                 });
 
+                console.log('Decoded event:', decoded.eventName);
+
                 if (decoded.eventName === 'Transfer') {
                     const args = decoded.args as unknown as { from: string; to: string; value: bigint };
+                    console.log('Transfer from:', args.from);
+                    console.log('Transfer to:', args.to);
+                    console.log('Transfer value:', args.value.toString());
 
                     // Verify recipient is the channel wallet
                     if (
@@ -102,16 +126,21 @@ export async function POST(request: NextRequest) {
                         transferFound = true;
                         fromAddress = args.from;
                         transferAmount = args.value;
+                        console.log('Transfer matched!');
                         break;
+                    } else {
+                        console.log('Transfer recipient mismatch');
                     }
                 }
-            } catch {
+            } catch (decodeError) {
                 // Not a Transfer event, continue
+                console.log('Could not decode log:', decodeError);
                 continue;
             }
         }
 
         if (!transferFound) {
+            console.log('No valid transfer found to channel wallet');
             return NextResponse.json(
                 { error: 'No valid MNEE transfer found to channel wallet' },
                 { status: 400 }

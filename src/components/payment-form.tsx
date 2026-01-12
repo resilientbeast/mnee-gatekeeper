@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { MNEE_ABI, MNEE_CONTRACT_ADDRESS, parseManee } from '@/lib/constants';
+import { MNEE_ABI, MNEE_CONTRACT_ADDRESS, CHAIN_ID, parseManee } from '@/lib/constants';
 import type { SubscriptionPlan, Channel } from '@/types/database';
 
 interface PaymentFormProps {
@@ -15,7 +15,7 @@ interface PaymentFormProps {
     onError: (error: string) => void;
 }
 
-type PaymentStep = 'ready' | 'signing' | 'confirming' | 'verifying' | 'success' | 'error';
+type PaymentStep = 'ready' | 'switching' | 'signing' | 'confirming' | 'verifying' | 'success' | 'error';
 
 export function PaymentForm({
     plan,
@@ -24,10 +24,11 @@ export function PaymentForm({
     onSuccess,
     onError,
 }: PaymentFormProps) {
-    const { address, isConnected } = useAccount();
+    const { address, isConnected, chainId: currentChainId } = useAccount();
     const [step, setStep] = useState<PaymentStep>('ready');
     const [errorMessage, setErrorMessage] = useState<string>('');
 
+    const { switchChainAsync } = useSwitchChain();
     const { writeContract, data: hash, error: writeError } = useWriteContract();
 
     const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -77,10 +78,16 @@ export function PaymentForm({
             return;
         }
 
-        setStep('signing');
         setErrorMessage('');
 
         try {
+            // Check if we need to switch chains
+            if (currentChainId !== CHAIN_ID) {
+                setStep('switching');
+                await switchChainAsync({ chainId: CHAIN_ID });
+            }
+
+            setStep('signing');
             const amount = parseManee(plan.price_mnee);
 
             writeContract({
@@ -88,6 +95,7 @@ export function PaymentForm({
                 abi: MNEE_ABI,
                 functionName: 'transfer',
                 args: [channel.wallet_address as `0x${string}`, amount],
+                chainId: CHAIN_ID,
             });
 
             setStep('confirming');
@@ -107,6 +115,13 @@ export function PaymentForm({
 
     const getButtonContent = () => {
         switch (step) {
+            case 'switching':
+                return (
+                    <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Switching network...
+                    </>
+                );
             case 'signing':
                 return (
                     <>
@@ -144,6 +159,7 @@ export function PaymentForm({
 
     const isDisabled =
         !isConnected ||
+        step === 'switching' ||
         step === 'signing' ||
         step === 'confirming' ||
         step === 'verifying' ||
@@ -184,10 +200,10 @@ export function PaymentForm({
                     onClick={step === 'error' ? handlePayment : handlePayment}
                     disabled={isDisabled}
                     className={`w-full h-14 text-lg font-semibold transition-all ${step === 'success'
-                            ? 'bg-green-500 hover:bg-green-600'
-                            : step === 'error'
-                                ? 'bg-red-500 hover:bg-red-600'
-                                : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                        ? 'bg-green-500 hover:bg-green-600'
+                        : step === 'error'
+                            ? 'bg-red-500 hover:bg-red-600'
+                            : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
                         }`}
                 >
                     {getButtonContent()}
