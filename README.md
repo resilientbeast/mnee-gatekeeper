@@ -105,6 +105,19 @@ Set up a cron job to check expired subscriptions:
 - **Database**: Supabase (PostgreSQL)
 - **Bot**: node-telegram-bot-api
 
+## Acknowledgments & Third-Party Licenses
+
+This project uses the following open-source libraries:
+
+- [Next.js](https://nextjs.org/) - MIT License
+- [Wagmi](https://wagmi.sh/) - MIT License
+- [Viem](https://viem.sh/) - MIT License
+- [Reown AppKit](https://reown.com/) - Apache 2.0 License
+- [Supabase](https://supabase.com/) - MIT License
+- [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api) - MIT License
+- [Tailwind CSS](https://tailwindcss.com/) - MIT License
+- [Shadcn UI](https://ui.shadcn.com/) - MIT License
+
 ## License
 
 MIT
