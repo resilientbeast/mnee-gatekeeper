@@ -1,18 +1,18 @@
-# MNEE Gatekeeper - Vercel Deployment Guide
+# MNEE Gatekeeper - Deployment Guide
 
-A complete step-by-step guide to deploy the MNEE Gatekeeper Telegram Mini App to Vercel.
+A step-by-step guide to deploy your own MNEE Gatekeeper instance.
 
 ---
 
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Prepare Local Repository](#prepare-local-repository)
+2. [Clone & Install](#clone--install)
 3. [Set Up External Services](#set-up-external-services)
 4. [Deploy to Vercel](#deploy-to-vercel)
 5. [Configure Environment Variables](#configure-environment-variables)
 6. [Set Up Telegram Webhook](#set-up-telegram-webhook)
-7. [Create Demo Channel](#create-demo-channel)
+7. [Create Your Channel](#create-your-channel)
 8. [Verify Deployment](#verify-deployment)
 9. [Troubleshooting](#troubleshooting)
 
@@ -31,48 +31,28 @@ Before starting, ensure you have:
 
 ---
 
-## Prepare Local Repository
+## Clone & Install
 
-### Step 1: Verify Project Builds Locally
+### Step 1: Clone the Repository
 
 ```bash
+git clone https://github.com/resilientbeast/mnee-gatekeeper.git
 cd mnee-gatekeeper
+```
 
-# Install dependencies
+### Step 2: Install Dependencies
+
+```bash
 npm install
+```
 
-# Test the build
+### Step 3: Test the Build
+
+```bash
 npm run build
 ```
 
 If the build succeeds, you're ready to deploy.
-
-### Step 2: Initialize Git Repository
-
-```bash
-# Initialize git (if not already done)
-git init
-
-# Add all files
-git add .
-
-# Create initial commit
-git commit -m "Initial commit - MNEE Gatekeeper"
-```
-
-### Step 3: Push to GitHub
-
-1. Go to [github.com/new](https://github.com/new)
-2. Create a new repository named `mnee-gatekeeper`
-3. Make it **Public** (required for hackathon)
-4. Do NOT initialize with README (you already have one)
-5. Push your code:
-
-```bash
-git remote add origin https://github.com/YOUR_USERNAME/mnee-gatekeeper.git
-git branch -M main
-git push -u origin main
-```
 
 ---
 
@@ -120,12 +100,12 @@ git push -u origin main
 
 ### Option A: Deploy via Vercel Dashboard (Recommended)
 
-1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
-2. Click **"Add New..."** → **"Project"**
-3. Find and select your `mnee-gatekeeper` repository
-4. Click **"Import"**
-5. **Framework Preset**: Next.js (auto-detected)
-6. **Root Directory**: Leave as is (or select `mnee-gatekeeper` if in subdirectory)
+1. Fork the repository to your GitHub account
+2. Go to [vercel.com](https://vercel.com) and sign in with GitHub
+3. Click **"Add New..."** → **"Project"**
+4. Find and select your forked `mnee-gatekeeper` repository
+5. Click **"Import"**
+6. **Framework Preset**: Next.js (auto-detected)
 7. **Skip environment variables for now** - we'll add them next
 8. Click **"Deploy"**
 
@@ -175,13 +155,13 @@ vercel
 | `CRON_SECRET` | Generate random string | Production, Preview |
 | `NEXT_PUBLIC_APP_URL` | `https://your-app.vercel.app` | Production, Preview |
 
-### Network Configuration Options:
+### Network Configuration:
 
-**For Testnet (Soneium Minato) - Recommended for Demo:**
+**For Testnet (Sepolia) - Recommended for Testing:**
 ```
 NEXT_PUBLIC_MNEE_CONTRACT=0xYOUR_TEST_TOKEN_ADDRESS
-NEXT_PUBLIC_CHAIN_ID=1946
-ETHEREUM_RPC_URL=https://rpc.minato.soneium.org/
+NEXT_PUBLIC_CHAIN_ID=11155111
+ETHEREUM_RPC_URL=https://rpc.ankr.com/eth_sepolia
 ```
 
 **For Mainnet (Production):**
@@ -194,7 +174,6 @@ ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/YOUR_KEY
 ### Generate CRON_SECRET:
 
 ```bash
-# Run in terminal to generate random secret
 openssl rand -hex 32
 ```
 
@@ -205,7 +184,7 @@ Or use: [generate-secret.vercel.app](https://generate-secret.vercel.app/32)
 1. Go to **Deployments** tab
 2. Click the three dots on the latest deployment
 3. Click **"Redeploy"**
-4. Check **"Use existing Build Cache"** → NO (uncheck it)
+4. Uncheck **"Use existing Build Cache"**
 5. Click **"Redeploy"**
 
 ---
@@ -213,12 +192,6 @@ Or use: [generate-secret.vercel.app](https://generate-secret.vercel.app/32)
 ## Set Up Telegram Webhook
 
 After successful deployment, configure Telegram to send updates to your app.
-
-### Get Your Deployment URL
-
-Your Vercel URL will be: `https://mnee-gatekeeper-xxxxx.vercel.app`
-
-Find it in the Vercel dashboard under your project.
 
 ### Set the Webhook
 
@@ -241,170 +214,84 @@ curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
 curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo"
 ```
 
-**Expected response:**
-```json
-{
-  "ok": true,
-  "result": {
-    "url": "https://your-app.vercel.app/api/bot/webhook",
-    "has_custom_certificate": false,
-    "pending_update_count": 0
-  }
-}
-```
-
 ---
 
-## Create Demo Channel
+## Create Your Channel
 
 ### Step 1: Create Private Channel
 
-1. Open Telegram
-2. Tap **New Channel**
-3. Name: `MNEE Gatekeeper Demo`
-4. Description: `Demo channel for MNEE stablecoin subscriptions`
-5. Select **Private Channel**
-6. Skip adding members
+1. Open Telegram → **New Channel**
+2. Name your channel
+3. Select **Private Channel**
 
 ### Step 2: Add Bot as Admin
 
-1. Open channel settings
-2. Go to **Administrators**
-3. Click **Add Administrator**
-4. Search for your bot username
-5. Grant these permissions:
+1. Channel settings → **Administrators** → **Add Administrator**
+2. Search for your bot username
+3. Grant these permissions:
    - ✅ Invite Users via Link
-   - ✅ Post Messages (optional)
-6. Save
+   - ✅ Add Members
 
 ### Step 3: Get Channel ID
 
-Send a message in the channel, then:
-
-1. Forward that message to **@userinfobot**
-2. It will show the channel ID (format: `-100xxxxxxxxxx`)
-
-Or use the API:
-```bash
-curl "https://api.telegram.org/bot<TOKEN>/getUpdates"
-```
+Forward any channel message to **@userinfobot** to get the channel ID (format: `-100xxxxxxxxxx`)
 
 ### Step 4: Register Channel with Bot
 
-Send these commands to your bot in Telegram:
+Send these commands to your bot:
 
 ```
 /addchannel -100CHANNEL_ID 0xYourWalletAddress
-```
-
-Then add subscription plans:
-```
-/addplan -100CHANNEL_ID "Demo Weekly" 1 7
-/addplan -100CHANNEL_ID "Demo Monthly" 5 30
+/addplan -100CHANNEL_ID "Weekly Access" 1 7
+/addplan -100CHANNEL_ID "Monthly Access" 5 30
 ```
 
 ---
 
 ## Verify Deployment
 
-### Checklist
+### Test Checklist
 
 | Test | How to Verify |
 |------|---------------|
 | ✅ App loads | Visit your Vercel URL |
 | ✅ Bot responds | Send `/start` to bot |
-| ✅ Channel registered | Send `/admin` to see channels |
 | ✅ Plans visible | Send `/start -100CHANNEL_ID` |
 | ✅ Mini App opens | Click "Subscribe Now" button |
 | ✅ Wallet connects | Connect MetaMask in Mini App |
 | ✅ Payment works | Complete a test payment |
-| ✅ Invite link received | Should get link after payment |
-
-### Test Full Flow
-
-1. **Start the bot**: Send `/start -100YOUR_CHANNEL_ID`
-2. **Open Mini App**: Click the "Subscribe Now" button
-3. **Connect wallet**: MetaMask on correct network
-4. **Select plan**: Choose a subscription tier
-5. **Pay**: Approve the MNEE transfer
-6. **Get link**: Receive and use invite link
-7. **Join channel**: Verify access granted
+| ✅ Invite link works | Use the generated link to join |
 
 ---
 
 ## Troubleshooting
 
-### Build Fails on Vercel
-
-**Error**: `Module not found`
-- Check all dependencies are in `package.json`
-- Run `npm install` locally and commit `package-lock.json`
-
-**Error**: Type errors
-```bash
-# Run locally to see errors
-npm run build
-```
-
 ### Bot Not Responding
 
-1. Check webhook is set correctly:
-   ```bash
-   curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"
-   ```
-
-2. Check Vercel function logs:
-   - Vercel Dashboard → Project → **Logs** tab
-
+1. Check webhook: `curl "https://api.telegram.org/bot<TOKEN>/getWebhookInfo"`
+2. Check Vercel logs: Dashboard → Project → Logs tab
 3. Verify `TELEGRAM_BOT_TOKEN` is correct
 
 ### Mini App Not Loading
 
-1. Check `NEXT_PUBLIC_APP_URL` matches your Vercel domain
-2. Ensure HTTPS (Telegram requires it)
-3. Check browser console for errors
+- Check `NEXT_PUBLIC_APP_URL` matches your Vercel domain
+- Ensure using HTTPS
 
 ### Payments Not Verifying
 
-1. Verify `ETHEREUM_RPC_URL` is correct for your chain
-2. Check `NEXT_PUBLIC_MNEE_CONTRACT` address
-3. Look at Vercel function logs for errors
+- Verify `ETHEREUM_RPC_URL` is correct for your chain
+- Check `NEXT_PUBLIC_MNEE_CONTRACT` address
+- Look at Vercel function logs for detailed error messages
 
-### Database Errors
+### RPC Timeout Errors
 
-1. Verify Supabase credentials are correct
-2. Check migration was run successfully
-3. Test connection:
-   ```bash
-   curl "https://xxx.supabase.co/rest/v1/channels" \
-     -H "apikey: YOUR_ANON_KEY"
-   ```
-
----
-
-## Production Domains (Optional)
-
-### Add Custom Domain
-
-1. Vercel Dashboard → Project → **Settings** → **Domains**
-2. Add your domain
-3. Update DNS records as instructed
-4. Update `NEXT_PUBLIC_APP_URL` to new domain
-5. Update Telegram webhook URL
+Try a different RPC provider:
+- `https://rpc.ankr.com/eth_sepolia` (recommended)
+- `https://eth-sepolia.g.alchemy.com/v2/demo`
 
 ---
 
 ## Quick Reference
-
-### Important URLs
-
-| Service | URL |
-|---------|-----|
-| Your App | `https://your-app.vercel.app` |
-| Vercel Dashboard | `https://vercel.com/dashboard` |
-| Supabase Dashboard | `https://supabase.com/dashboard` |
-| Telegram BotFather | `https://t.me/BotFather` |
-| Reown Console | `https://cloud.reown.com` |
 
 ### Bot Commands
 
@@ -418,15 +305,11 @@ npm run build
 /help - Show commands
 ```
 
----
+### Useful Links
 
-## Next Steps
-
-After successful deployment:
-
-1. ✅ Test full payment flow
-2. ✅ Record demo video
-3. ✅ Submit to Devpost before deadline
-4. ✅ Include GitHub repo link
-5. ✅ Include Live Demo URL
-6. ✅ Include Bot link for judges
+| Service | URL |
+|---------|-----|
+| Vercel Dashboard | https://vercel.com/dashboard |
+| Supabase Dashboard | https://supabase.com/dashboard |
+| Telegram BotFather | https://t.me/BotFather |
+| Reown Console | https://cloud.reown.com |
