@@ -1,17 +1,14 @@
 # MNEE Gatekeeper Testing Guide
 
-This guide walks you through testing the MNEE Gatekeeper application using the **Soneium Minato Testnet**.
-
-> [!IMPORTANT]
-> The MNEE CLI tool is for BSV blockchain and is **NOT valid** for this hackathon. This hackathon requires MNEE ERC-20 on Ethereum-compatible networks.
+This guide walks you through testing the MNEE Gatekeeper application using the **Sepolia Testnet**.
 
 ---
 
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Network Configuration](#network-configuration)
-3. [Getting Testnet Tokens](#getting-testnet-tokens)
+2. [Getting Testnet Tokens](#getting-testnet-tokens)
+3. [Deploy Test MNEE Token](#deploy-test-mnee-token)
 4. [Environment Setup](#environment-setup)
 5. [Testing the Application](#testing-the-application)
 6. [Troubleshooting](#troubleshooting)
@@ -23,37 +20,18 @@ This guide walks you through testing the MNEE Gatekeeper application using the *
 Before starting, ensure you have:
 
 - [x] Node.js 18+ installed
-- [x] MetaMask or compatible Web3 wallet
+- [x] MetaMask browser extension
 - [x] Telegram account
 - [x] Supabase project set up
 - [x] Reown (WalletConnect) project ID
 
 ---
 
-## Network Configuration
-
-### Add Soneium Minato to MetaMask
-
-| Field | Value |
-|-------|-------|
-| **Network Name** | Soneium Minato |
-| **RPC URL** | `https://rpc.minato.soneium.org/` |
-| **Chain ID** | `1946` |
-| **Currency Symbol** | ETH |
-| **Block Explorer** | `https://explorer-testnet.soneium.org/` |
-
-**Steps:**
-1. Open MetaMask → Settings → Networks → Add Network
-2. Enter the values above
-3. Click "Save"
-
----
-
 ## Getting Testnet Tokens
 
-### Step 1: Get Sepolia ETH (for bridging)
+### Get Sepolia ETH (for gas)
 
-The easiest method is using the Sepolia PoW Faucet:
+**Option 1: Sepolia PoW Faucet (Recommended)**
 
 1. Go to **[Sepolia PoW Faucet](https://sepolia-faucet.pk910.de/)**
 2. Paste your wallet address
@@ -61,27 +39,25 @@ The easiest method is using the Sepolia PoW Faucet:
 4. Leave the tab open for **10-15 minutes**
 5. Once you have ~0.5 Sepolia ETH, stop mining and claim
 
-**Alternative Faucets:**
-- [Alchemy Sepolia Faucet](https://sepoliafaucet.com/) (requires account)
-- [QuickNode Faucet](https://faucet.quicknode.com/ethereum/sepolia) (no account needed)
-- [Infura Faucet](https://www.infura.io/faucet/sepolia)
+**Option 2: Other Faucets**
 
-### Step 2: Bridge ETH to Soneium Minato
+| Faucet | Link | Notes |
+|--------|------|-------|
+| Alchemy | [sepoliafaucet.com](https://sepoliafaucet.com/) | Requires account |
+| QuickNode | [faucet.quicknode.com](https://faucet.quicknode.com/ethereum/sepolia) | No account needed |
+| Infura | [infura.io/faucet](https://www.infura.io/faucet/sepolia) | Requires account |
 
-1. Go to **[Soneium Superbridge](https://superbridge.app/soneium-minato)**
-2. Connect your wallet (ensure you're on Sepolia network)
-3. Enter the amount of ETH to bridge (recommend 0.3+ ETH)
-4. Accept terms and click **"Bridge"**
-5. Confirm the transaction in MetaMask
-6. Wait for bridging to complete (~5-10 minutes)
+---
 
-### Step 3: Deploy/Use Test MNEE Token
+## Deploy Test MNEE Token
 
-Since there's no official MNEE faucet on Soneium Minato, you have two options:
+Since there's no official MNEE token on Sepolia, deploy your own test token.
 
-#### Option A: Deploy Your Own Test ERC-20 Token
+### Using Remix IDE
 
-Use this simple ERC-20 contract for testing:
+1. Go to **[Remix IDE](https://remix.ethereum.org/)**
+2. Create a new file called `TestMNEE.sol`
+3. Paste this code:
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -91,29 +67,36 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract TestMNEE is ERC20 {
     constructor() ERC20("Test MNEE", "tMNEE") {
-        _mint(msg.sender, 1000000 * 10 ** decimals());
+        _mint(msg.sender, 1000000 * 10 ** 18);
     }
     
-    // Allow anyone to mint for testing
-    function faucet(uint256 amount) external {
-        _mint(msg.sender, amount * 10 ** decimals());
+    // Faucet - anyone can mint 1000 test tokens
+    function faucet() external {
+        _mint(msg.sender, 1000 * 10 ** 18);
     }
 }
 ```
 
-Deploy using:
-- [Remix IDE](https://remix.ethereum.org/) - Connect to Soneium Minato
-- Hardhat with custom network config
+4. **Compile**: Click Solidity Compiler tab → Compile
+5. **Deploy**: 
+   - Click Deploy & Run tab
+   - Set Environment to "Injected Provider - MetaMask"
+   - Ensure MetaMask is on **Sepolia**
+   - Click "Deploy" and confirm in MetaMask
+6. **Copy the contract address** from "Deployed Contracts"
 
-#### Option B: Use Existing Test Token
+### Add Token to MetaMask
 
-Check the [Soneium Minato Explorer](https://explorer-testnet.soneium.org/) for existing ERC-20 test tokens.
+1. MetaMask → Assets → Import tokens
+2. Paste your deployed contract address
+3. Symbol: `tMNEE`, Decimals: `18`
+4. You should see **1,000,000 tMNEE** in your wallet
 
 ---
 
 ## Environment Setup
 
-### Update `.env.local` for Soneium Minato Testing
+### Local Development (`.env.local`)
 
 ```env
 # Telegram Bot
@@ -125,13 +108,13 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# Web3 - SONEIUM MINATO TESTNET
+# Web3 - SEPOLIA TESTNET
 NEXT_PUBLIC_PROJECT_ID=your_reown_project_id
 NEXT_PUBLIC_MNEE_CONTRACT=0xYOUR_DEPLOYED_TEST_TOKEN_ADDRESS
-NEXT_PUBLIC_CHAIN_ID=1946
+NEXT_PUBLIC_CHAIN_ID=11155111
 
 # RPC for backend verification
-ETHEREUM_RPC_URL=https://rpc.minato.soneium.org/
+ETHEREUM_RPC_URL=https://rpc.ankr.com/eth_sepolia
 
 # Cron
 CRON_SECRET=your_cron_secret
@@ -140,73 +123,15 @@ CRON_SECRET=your_cron_secret
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### Update Web3 Config to Support Soneium Minato
+### Vercel Deployment
 
-Modify `src/lib/web3-config.ts`:
+Set these environment variables in Vercel Dashboard:
 
-```typescript
-import { cookieStorage, createStorage } from '@wagmi/core';
-import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { mainnet, sepolia } from '@reown/appkit/networks';
-import type { AppKitNetwork } from '@reown/appkit/networks';
-
-// Custom Soneium Minato network definition
-const soneiumMinato: AppKitNetwork = {
-    id: 1946,
-    name: 'Soneium Minato',
-    nativeCurrency: {
-        name: 'Ethereum',
-        symbol: 'ETH',
-        decimals: 18,
-    },
-    rpcUrls: {
-        default: {
-            http: ['https://rpc.minato.soneium.org/'],
-        },
-    },
-    blockExplorers: {
-        default: {
-            name: 'Soneium Explorer',
-            url: 'https://explorer-testnet.soneium.org/',
-        },
-    },
-    testnet: true,
-};
-
-export const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
-
-if (!projectId) {
-    console.warn('NEXT_PUBLIC_PROJECT_ID is not set');
-}
-
-const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 11155111;
-
-// Network selection based on chain ID
-export const networks: [AppKitNetwork, ...AppKitNetwork[]] =
-    chainId === 1946
-        ? [soneiumMinato, sepolia, mainnet]
-        : chainId === 1
-            ? [mainnet, sepolia]
-            : [sepolia, mainnet];
-
-export const wagmiAdapter = new WagmiAdapter({
-    storage: createStorage({
-        storage: cookieStorage,
-    }),
-    ssr: true,
-    projectId: projectId || '',
-    networks,
-});
-
-export const config = wagmiAdapter.wagmiConfig;
-
-export const metadata = {
-    name: 'MNEE Gatekeeper',
-    description: 'Subscribe to premium Telegram channels with MNEE',
-    url: process.env.NEXT_PUBLIC_APP_URL || 'https://localhost:3000',
-    icons: ['/icon.png'],
-};
-```
+| Variable | Value |
+|----------|-------|
+| `NEXT_PUBLIC_CHAIN_ID` | `11155111` |
+| `NEXT_PUBLIC_MNEE_CONTRACT` | `0xYourSepoliaContractAddress` |
+| `ETHEREUM_RPC_URL` | `https://rpc.ankr.com/eth_sepolia` |
 
 ---
 
@@ -214,8 +139,8 @@ export const metadata = {
 
 ### 1. Database Setup
 
+Run the migration in Supabase SQL Editor:
 ```bash
-# Run the migration in Supabase SQL Editor
 # Use the script from: supabase/migrations/001_initial_schema.sql
 ```
 
@@ -226,27 +151,39 @@ npm install
 npm run dev
 ```
 
-### 3. Register a Test Channel
+### 3. Set Up Telegram Webhook (for local dev)
+
+Use ngrok or similar to expose localhost:
+```bash
+ngrok http 3000
+```
+
+Set webhook:
+```bash
+curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://your-ngrok-url.ngrok.io/api/bot/webhook"
+```
+
+### 4. Register a Test Channel
 
 Via Telegram Bot commands:
 ```
 /addchannel -1001234567890 0xYourWalletAddress
-/addplan -1001234567890 "Weekly Access" 5 7
-/addplan -1001234567890 "Monthly Access" 15 30
+/addplan -1001234567890 "Weekly Access" 1 7
+/addplan -1001234567890 "Monthly Access" 5 30
 ```
 
-### 4. Test the Payment Flow
+### 5. Test the Payment Flow
 
 1. **Open Mini App**: Send `/start -1001234567890` to your bot
-2. **Connect Wallet**: Click the wallet button, connect MetaMask on Soneium Minato
-3. **Get Test Tokens**: If using your own contract, call the `faucet()` function
+2. **Connect Wallet**: Click the wallet button, connect MetaMask on Sepolia
+3. **Get Test Tokens**: If needed, call `faucet()` in Remix on your deployed contract
 4. **Select Plan**: Choose a subscription tier
-5. **Pay**: Approve the MNEE transfer transaction
-6. **Verify**: Check that the invite link is generated
+5. **Pay**: Approve the tMNEE transfer transaction
+6. **Verify**: Confirm the invite link is generated
 
-### 5. Verify On-Chain
+### 6. Verify On-Chain
 
-Check your transaction on the [Soneium Minato Explorer](https://explorer-testnet.soneium.org/):
+Check your transaction on [Sepolia Etherscan](https://sepolia.etherscan.io/):
 - Confirm Transfer event emitted
 - Verify recipient matches channel wallet
 - Check amount matches plan price
@@ -257,19 +194,19 @@ Check your transaction on the [Soneium Minato Explorer](https://explorer-testnet
 
 ### "Insufficient balance" Error
 
-- Ensure you have bridged ETH to Soneium Minato for gas
-- Verify you have test MNEE tokens in your wallet
-- Check you're connected to the correct network (Chain ID 1946)
+- Ensure you have Sepolia ETH for gas
+- Verify you have test tMNEE tokens in your wallet
+- Check you're connected to Sepolia (Chain ID 11155111)
 
 ### Transaction Not Verifying
 
-- Ensure `ETHEREUM_RPC_URL` is set to `https://rpc.minato.soneium.org/`
+- Ensure `ETHEREUM_RPC_URL` is set to a reliable RPC like `https://rpc.ankr.com/eth_sepolia`
 - Check the contract address matches your deployed test token
-- Verify transaction was confirmed (check explorer)
+- Verify transaction was confirmed on Etherscan
 
 ### Wallet Won't Connect
 
-- Ensure MetaMask has Soneium Minato network added
+- Ensure MetaMask is on Sepolia network
 - Check `NEXT_PUBLIC_PROJECT_ID` is valid
 - Try clearing browser cache and reconnecting
 
@@ -282,20 +219,27 @@ Check your transaction on the [Soneium Minato Explorer](https://explorer-testnet
   ```
 - Ensure the bot is added to your channel as admin
 
+### RPC Timeout Errors
+
+If you see "Failed to fetch transaction receipt", try a different RPC:
+- `https://rpc.ankr.com/eth_sepolia` (recommended)
+- `https://eth-sepolia.g.alchemy.com/v2/demo`
+- `https://sepolia.infura.io/v3/YOUR_KEY`
+
 ---
 
 ## Production Deployment
 
 When ready to deploy to mainnet:
 
-1. Update `.env` with production values:
+1. Update environment variables:
    ```env
    NEXT_PUBLIC_MNEE_CONTRACT=0x8ccedbAe4916b79da7F3F612EfB2EB93A2bFD6cF
    NEXT_PUBLIC_CHAIN_ID=1
    ETHEREUM_RPC_URL=https://mainnet.infura.io/v3/YOUR_KEY
    ```
 
-2. Deploy to Vercel or your hosting provider
+2. Deploy to Vercel
 
 3. Set the Telegram webhook to your production URL
 
@@ -305,16 +249,14 @@ When ready to deploy to mainnet:
 
 | Environment | Chain ID | MNEE Contract | RPC URL |
 |-------------|----------|---------------|---------|
-| **Mainnet** | 1 | `0x8ccedbAe4916b79da7F3F612EfB2EB93A2bFD6cF` | Infura/Alchemy |
-| **Sepolia** | 11155111 | Deploy your own | `https://sepolia.infura.io/v3/...` |
-| **Soneium Minato** | 1946 | Deploy your own | `https://rpc.minato.soneium.org/` |
+| **Mainnet** | 1 | `0x8ccedbAe4916b79da7F3F612EfB2EB93A2bFD6cF` | Alchemy/Infura |
+| **Sepolia** | 11155111 | Deploy your own | `https://rpc.ankr.com/eth_sepolia` |
 
 ---
 
 ## Resources
 
-- [Soneium Minato Explorer](https://explorer-testnet.soneium.org/)
-- [Soneium Superbridge](https://superbridge.app/soneium-minato)
+- [Sepolia Etherscan](https://sepolia.etherscan.io/)
 - [Sepolia PoW Faucet](https://sepolia-faucet.pk910.de/)
+- [Remix IDE](https://remix.ethereum.org/)
 - [MNEE Official](https://mnee.io)
-- [Devpost Hackathon Forum](https://mnee-eth.devpost.com/forum_topics)
